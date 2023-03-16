@@ -1,7 +1,7 @@
 # coding: utf-8
 
 """
-	Created by Shaheen Syed
+	Original reated by Shaheen Syed
 	Date: 06 June 2019
 """
 
@@ -60,7 +60,7 @@ def create_directory(name):
 		if not os.path.exists(name):
 			os.makedirs(name)
 			logging.info('Created directory: {}'.format(name))
-	except Exception, e:
+	except Exception as e:
 		logging.error('[createDirectory] : {}'.format(e))
 		exit(1)
 
@@ -84,7 +84,7 @@ def read_directory(directory):
 	
 	try:
 		return glob2.glob(os.path.join( directory, '**' , '*.*'))
-	except Exception, e:
+	except Exception as e:
 		logging.error('[read_directory] : {}'.format(e))
 		exit(1)
 
@@ -122,7 +122,7 @@ def save_csv(data, name, folder):
 			writer = csv.writer(f, lineterminator='\n')
 			writer.writerows(data)
 
-	except Exception, e:
+	except Exception as e:
 		logging.error('[save_csv] : {}'.format(e))
 		exit(1)
 
@@ -158,7 +158,7 @@ def read_csv(filename, folder = None):
 			reader = csv.reader(f)
 			# return csv as list
 			return list(reader)
-	except Exception, e:
+	except Exception as e:
 		logging.error('Unable to open CSV {} : {}'.format(filename, str(e)))
 
 
@@ -197,7 +197,7 @@ def save_dic_to_csv(dic, file_name, folder):
 			for k, v in dic.items():
 				writer.writerow([k, v])
 
-	except Exception, e:
+	except Exception as e:
 		logging.error('[save_dic_to_csv] : {}'.format(e))
 		exit(1)
 
@@ -224,7 +224,7 @@ def pdf_to_plain(pdf_file):
 		# use textract to convert PDF to plain text
 		return textract.process(pdf_file, encoding='utf8')
 
-	except Exception, e:
+	except Exception as e:
 		logging.error('[{}] : {}'.format(sys._getframe().f_code.co_name,e))
 		return None
 
@@ -273,7 +273,7 @@ def full_text_preprocessing(content):
 		content = content.replace(u'\ufb04', "ffl") # ffl ligature
 
 		return content
-	except Exception, e:
+	except Exception as e:
 		logging.error('[{}] : {}'.format(sys._getframe().f_code.co_name,e))
 		exit()
 
@@ -297,22 +297,24 @@ def save_plain_text(plain_text, file_name, folder):
 	try:
 
 		# create folder name as directory if not exists
-		create_directory(folder)
+		#create_directory(folder)
+		print("folder", folder)
 
 		# check if .txt is used as an extension, this is not required
 		if file_name[-4:] == '.txt':
 			file_name = file_name[:-4]
 
 		# create the file name
-		file_name = os.path.join(folder, file_name + '.txt')
-
+		file_name = folder + "/" + file_name + '.txt'
+		print("file name", file_name)
+		print("folder", folder)
 		# save data to folder with name
-		with open(file_name, "w") as f:
+		with open(file_name, "wb") as f:
 
 			# write plain text to file
 			f.write(plain_text.encode('utf-8'))
 
-	except Exception, e:
+	except Exception as e:
 		logging.error('[save_plain_text] : {}'.format(e))
 		exit(1)
 
@@ -341,14 +343,14 @@ def read_plain_text(file_name):
 			# read the content and return
 			return f.read()
 
-	except Exception, e:
+	except Exception as e:
 		logging.error('[read_plain_text] : {}'.format(e))
 		exit(1)
 
 def setup_spacy():
 
 	# setting up spacy and loading an English corpus
-	nlp = spacy.load('en')
+	nlp = spacy.load('en_core_web_sm')
 
 	# load the same corpus but in a different way (depends if there is a symbolic link)
 	#nlp = spacy.load('en_core_web_sm')
@@ -356,8 +358,8 @@ def setup_spacy():
 	# add some more stopwords; apparently spacy does not contain all the stopwords
 	for word in set(stopwords.words('english')):
 
-		nlp.Defaults.stop_words.add(unicode(word))
-		nlp.Defaults.stop_words.add(unicode(word.title()))
+		nlp.Defaults.stop_words.add(str(word))
+		nlp.Defaults.stop_words.add(str(word.title()))
 
 	for word in nlp.Defaults.stop_words:
 		lex = nlp.vocab[word]
@@ -382,9 +384,17 @@ def word_tokenizer(text):
 	try:
 		# Lemmatize tokens, remove punctuation, remove single character tokens and remove stopwords.
 		return  [token.lemma_ for token in text if token.is_alpha and not token.is_stop and len(token) > 1]
-	except Exception, e:
+	except Exception as e:
 		logging.error('[{}] : {}'.format(sys._getframe().f_code.co_name,e))
 		exit(1)
+		
+def aux_remove_domain_specific_stopwords(most_common):
+    # get a list with specific stop words
+	specific_stopwords = []
+	for tuple in most_common:
+		if tuple[1]>=5:
+			specific_stopwords.append(tuple[0])
+	return specific_stopwords		
 
 def remove_domain_specific_stopwords(tokens):
 
@@ -412,10 +422,12 @@ def remove_domain_specific_stopwords(tokens):
 					 "october", "november", "december", "bull", "introduction", "results", "discussion", "rev", "jj", "conclusion", "conclusions", "chapman", "hall",
 					 "contents", "page", "section", "chapter", "summary", "appendix", "references", "discussion", "keywords", "accepted", "received", "crossmark", "suppl",
 					 "fog", "elsevier", "ssdi", "pii", "crown", "copyright", "fme", "bv", "by", "fax", "tel", "sciencedirect", "volume", "nrc", "print", "online", "issn", "doi",
-					 "mar", "corresponding", "article", "address", "among", "amongst", "within", "using", "used", "use", "with"]
+					 "mar", "corresponding", "article", "address", "among", "amongst", "within", "using", "used", "use", "with","description","instructors","department","language","instruction","campus","workload","on-site","hours","hee","hpe","prerequisites","terms","courses","syllabus","overview","class","components","grading","english","french","knowledge","assessment","support","resources","evaluation","skill","lecture","labs"]
+					 
+	specific_stopwords = aux_remove_domain_specific_stopwords(most_common)
 
 	# use only the tokens that are not in the list of stopwords
-	tokens = [t for t in tokens if t not in stopwords]
+	tokens = [t for t in tokens if t not in stopwords and t not in specific_stopwords]
 
 	return tokens
 
