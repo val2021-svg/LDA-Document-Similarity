@@ -1,10 +1,15 @@
-# LDA Document Similarity
+
+The goal of this project is to use LDA for organizing the catalogue of courses at CentraleSupélec into different topics, such that each course can be described by its "relevance" to the discovered topics.
+
+# Original:
+
+## LDA Document Similarity
 
 Use pre-trained latent Dirichlet allocation (LDA) models to infer document-topic distributions from a set of PDFs. The document-topic distribution provides an overview of what topics are found within each of the PDF documents, and in what proportion (topic 1 = 20%, topic 2 = 5% etc.).
 
 Such document-topic distributions can then be used to calculate the similarity between two PDF documents. Here similarity is calculated with the Hellinger distance, a measure to calculate the distance between two probability distributions. Note that the Hellinger distance is symmetrical, meaning the distance between x and y = distance between y and x; contrary to KL-divergence for instance.
 
-## What to do first
+### What to do first
 
 Add PDFs to the folder files/pdf
 
@@ -26,13 +31,13 @@ nltk.download('stopwords')
 important when converting pdf to plain text:
 use chardet==2.3.0 for textract (to convert pdf to plain text). The latest version of chardet does not work properly in some cases where encoding cannot be retrieved
 
-## How to run
+### How to run
 
 ```
 python start.py
 ```
 
-## Which switches to turn on (set to True)
+### Which switches to turn on (set to True)
 
 There are 6 switches that can be set to True, either all at the same time, or by turning them on one-by-one
 
@@ -69,7 +74,7 @@ There are 6 switches that can be set to True, either all at the same time, or by
 	* plot document similarity heatmap (num_publications x num_publications)
 	* creates similarities.pdf
 
-## Which topic model to use
+### Which topic model to use
 
 There are 2 trained LDA models included in the files/lda folder. Note that these models are trained using corpora from the domain of fisheries science. Inferring document-topic distributions will correctly work only if the PDFs can be categorized as 'fisheries'.
 
