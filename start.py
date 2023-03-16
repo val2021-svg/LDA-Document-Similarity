@@ -2,7 +2,7 @@
 
 """
 
-	Created by: Shaheen Syed
+	Original code created by: Shaheen Syed
 	Date: 06 June 2019
 
 	- packages required 
@@ -31,19 +31,25 @@ import matplotlib.pyplot as plt # for plotting
 import seaborn as sns # for plotting
 import numpy as np # for vectors and arrays
 import scipy.cluster.hierarchy as shc # for dendrogram
+import spacy
+#nlp = spacy.load('en_core_web_sm')
+#nlp.max_length = 1150000 # or higher
+nlp = spacy.load('en_core_web_sm',disable=['parser', 'tagger','ner'])
+nlp.max_length = 1198623
 
 # for parallel processing
 from multiprocessing import cpu_count
 from joblib import Parallel
 from joblib import delayed
+from collections import Counter
 
 # switches (turn on what needs to be executed)
-perform_pdf_to_plain = False
-perform_tokenization = False
+perform_pdf_to_plain = True
+perform_tokenization = True
 perform_topic_inference = False
 plot_topics_in_documents = False
 perform_document_similarity = False
-plot_document_similarity = True
+plot_document_similarity = False
 
 
 """
@@ -55,14 +61,16 @@ plot_document_similarity = True
 		-	Narrow lenses for capturing the complexity of fisheries: A topic analysis of fisheries science from 1990 to 2016
 		-	https://doi.org/10.1111/faf.12280
 """
+#path to the folder with the pdf files
+f = '/input'
 lda_type = 2
 
 
 """
 	internal helper functions
 """
-def process_pdf_to_plain(f, i = 1, total = 1):
-
+def process_pdf_to_plain(f, text_folder, i = 1, total = 1):
+	print('done')
 	"""
 		Convert PDF document to plain text
 
@@ -90,15 +98,19 @@ def process_pdf_to_plain(f, i = 1, total = 1):
 
 		# remove french part for certain articles (Can. j. Fish. Science)
 		# this is use case specific and should be commented out		
-		plain_text = re.sub(r'Re\xb4sume\xb4.*?\[Traduit par la Re\xb4daction\]', '', plain_text)
-		plain_text = re.sub(r'R\xe9sum\xe9.*?\[Traduit par la R\xe9daction\]', '', plain_text)
+		#plain_text = re.sub(r'Re\xb4sume\xb4.*?\[Traduit par la Re\xb4daction\]', '', plain_text)
+		#plain_text = re.sub(r'R\xe9sum\xe9.*?\[Traduit par la R\xe9daction\]', '', plain_text)
 
 		# extract file name from file and remove the .pdf extension
 		file_name = f.split(os.sep)[-1][:-4]
+		print(file_name)
+		
+		
 
 		# save plain text of PDF
-		save_plain_text(plain_text, file_name, os.path.join('files', 'plain'))
-
+		save_plain_text(plain_text, file_name, text_folder)
+		#print(os.path)
+		#print(plain_text)        
 
 """
 	Script starts here
@@ -112,16 +124,15 @@ if __name__ == "__main__":
 
 	# execute if set to True
 	if perform_pdf_to_plain:
-
 		"""
 			1) Convert PDF file to plain text
 		"""
 
 		# read PDF files from folder
-		F = read_directory(os.path.join('files', 'pdf'))
-
+		#F = read_directory(os.path.join('files', 'pdf'))
+		F = read_directory(f)
 		# define if parallel processing should be on/off
-		parallel = True
+		parallel = False
 
 		if parallel:
 			# use parallel processing to speed up processing time
@@ -132,17 +143,20 @@ if __name__ == "__main__":
 			executor(tasks)
 
 		else:
-
+			print('here1')
+			# folder to save plain text
+			text_folder = /data/plain_text'
 			# loop over each file and convert to plain text
 			for i, f in enumerate(F):
-
 				# call function to process pdf to plain text conversion
-				process_pdf_to_plain(f, i, len(F))
+				process_pdf_to_plain(f, text_folder, i, len(F))
+				print('here2')                
 
 
 
 	# execute if set to True
 	if perform_tokenization:
+		print("here3")
 
 		"""
 			2) Convert plain text to individual word tokens (bag-of-words)
@@ -155,13 +169,15 @@ if __name__ == "__main__":
 		"""
 
 		# read plain text files from folder
-		F = read_directory(os.path.join('files', 'plain'))
+		F = read_directory(text_folder)
 
 		# load spacy so we can do some NLP things
 		nlp = setup_spacy()
+		print("here4")
 
 		# loop over each file, read plain text, and perform tokenization
 		for i, f in enumerate(F):
+			print("here5")
 
 			logging.debug('Processing file: {} {}/{}'.format(f, i + 1, len(F)))
 
@@ -170,9 +186,19 @@ if __name__ == "__main__":
 
 			# convert to spacy object
 			doc = nlp(doc)
+			#for line in f.read().split('\n'):
+             #   doc = nlp(''.join(ch for ch in line if ch.isalnum() or ch == " "))
+
 
 			# tokenize
 			tokens = word_tokenizer(doc)
+
+			# count word frequency
+			freq = Counter(tokens)
+
+			# get 10 most common words
+			most_common = freq.most_common(10)
+			print (most_common,"\n")
 
 			# remove domain specific stop words
 			tokens = remove_domain_specific_stopwords(tokens)
@@ -183,9 +209,12 @@ if __name__ == "__main__":
 			# convert tokens from list to a string by joining them and add a new line (this will create a token per line)
 			tokens_plain = '\n'.join(tokens)
 
+			# path to the folder to save the tokens
+			tokens_folder = '/data/tokens'
+			print("folder", tokens_folder)
 			# save tokens as txt file
-			save_plain_text(tokens_plain, file_name, os.path.join('files', 'tokens'))
-
+			print("entrou em save plain text")
+			save_plain_text(tokens_plain, file_name, tokens_folder)
 
 
 	# execute if set to True 
@@ -196,7 +225,7 @@ if __name__ == "__main__":
 		"""
 
 		# location of LDA files
-		lda_files_location = os.path.join('files', 'lda', 'model{}'.format(lda_type))
+		lda_files_location =  ''+ os.path.join('files', 'lda', 'model{}'.format(lda_type))
 
 		# load LDA dictionary and corpus
 		dictionary, corpus = get_dic_corpus(lda_files_location)
@@ -205,7 +234,7 @@ if __name__ == "__main__":
 		model = load_lda_model(lda_files_location)
 
 		# read files with tokens
-		F = read_directory(os.path.join('files', 'tokens'))
+		F = tokens_folder
 
 		# get the topic labels (only for convenience)
 		topic_labels = [getTopicLabel(i, lda_type) for i in range(0,len(model.get_topics()))]
@@ -238,7 +267,7 @@ if __name__ == "__main__":
 
 
 		# save location
-		topic_save_location = os.path.join('files', 'topics', 'model{}'.format(lda_type))
+		topic_save_location = ''+ os.path.join('files', 'topics', 'model{}'.format(lda_type))
 
 		# create directory if not exist
 		create_directory(topic_save_location)
